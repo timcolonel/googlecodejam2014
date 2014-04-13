@@ -2,82 +2,111 @@ require 'bundler'
 
 Bundler.require(:default)
 
-file = File.new('q3/q3data.txt', 'r')
+file = File.new('q3/q4data.txt', 'r')
 
-def play_war(n_blocks, k_blocks)
-  n_blocks = n_blocks.clone
-  k_blocks = k_blocks.clone
-  win = 0
-  lose = 0
-  while n_blocks.size > 0
-    n_max = n_blocks.max
-    sup = k_blocks.select do |x|
-      x > n_max
-    end
-    if sup.size > 0
-      k_choose = sup.min
+
+def test(r, c, m)
+  f = r*c-m
+  sq = Math.sqrt(f)
+  return true if sq % 1 == 0 and r >= sq and c >= sq
+
+  full_0_cols = (f/r).to_i-1
+
+  #If we have at least a row of 0
+  if full_0_cols > 0
+    rem = f-full_0_cols*r
+    if rem%r != 1
+      true
+    elsif (full_0_cols > 1 and r > 2) or (r-2 >= 1+full_0_cols)
+      true
     else
-      k_choose = k_blocks.min
+      false
     end
-    if k_choose > n_max
-      lose +=1
-    else
-      win +=1
-    end
-    n_blocks.delete(n_max)
-    k_blocks.delete(k_choose)
+  else
+    f == 1 or (f>= 4 and f%2 == 0)
   end
-  win
 end
 
-def play_dec_war(n_blocks, k_blocks)
-  n_blocks = n_blocks.clone
-  k_blocks = k_blocks.clone
-  win = 0
-  lose = 0
-  while n_blocks.size > 0
-    n_min = n_blocks.min
-    n_max = n_blocks.max
-    k_min = k_blocks.min
-    k_max = k_blocks.max
-    n_choose = n_min
-    if n_min < k_min
-      n_told = k_max - 0.0001
+def build(r, c, m)
+  rows = Array.new(r) { Array.new(c, '*') }
+  f = r*c-m
+  full_0_cols = (f/r).to_i-1
+  rem = f
+  sq = Math.sqrt(f)
+  if sq % 1 == 0 and r >= sq and c >= sq
+    (0...sq).each do |c_i|
+      (0...sq).each do |r_i|
+        rows[r_i][c_i] = '.'
+      end
+    end
+  elsif full_0_cols > 0
+    move_last= 0
+    if (f-full_0_cols*r)%r == 1
+      move_last = 1
+      if r-2 >= 1+full_0_cols
+        move_last = 1+full_0_cols
+      end
+    end
+    (0...c).each do |c_i|
+      (0...r).each do |r_i|
+        rows[r_i][c_i] = if rem > 0 or (move_last != 0 and rem + move_last > 0) then
+                           '.'
+                         else
+                           '*'
+                         end
+        rem -= 1
+      end
+      if rem <= 0 and move_last != 0
+        (0...move_last).each do |d|
+          rows[-1][c_i-1-d] = '*'
+        end
+        move_last = 0 #So bad coding :)
+      end
+    end
+  elsif f > 1
+    if c > 1
+      d = (f / 2).to_i
+      (0...d).each do |r_i|
+        rows[r_i][0] = '.'
+        rows[r_i][1] = '.'
+      end
     else
-      n_told = k_max + 0.0001
+      (0...f).each do |r_i|
+        rows[r_i][0] = '.'
+      end
     end
-
-    sup = k_blocks.select do |x|
-      x > n_told
-    end
-    if sup.size > 0
-      k_choose = sup.min
-    else
-      k_choose = k_blocks.min
-    end
-
-    if k_choose > n_choose
-      lose +=1
-    else
-      win +=1
-    end
-
-    n_blocks.delete(n_choose)
-    k_blocks.delete(k_choose)
   end
-  win
+  rows[0][0] = 'c'
+  rows
 end
 
+def print_rows(rows)
+  rows.each do |row|
+    puts row.join('')
+  end
+end
+
+def count(rows)
+  count = 0
+  rows.each do |row|
+    row.each do |col|
+      count += 1 if col == '*'
+    end
+  end
+  count
+end
 
 n = file.gets.to_i
 (0...n).each do |i|
-  nb = file.gets.to_i
-  n_blocks = file.gets.split(' ').map(&:to_f)
-  k_blocks = file.gets.split(' ').map(&:to_f)
+  puts "Case \##{i+1}:"
 
+  r, c, m = file.gets.split(' ').map(&:to_i)
 
-  war = play_war(n_blocks, k_blocks)
-  dec_war = play_dec_war(n_blocks, k_blocks)
-
-  puts "Case \##{i+1}: #{dec_war} #{war}"
+  if test(r, c, m)
+    print_rows(build(r, c, m))
+  elsif test(c, r, m)
+    print_rows(build(c, r, m).transpose)
+  else
+    puts 'Impossible'
+  end
 end
