@@ -1,4 +1,4 @@
-googlecodejam2014
+Google codejam 2014
 =================
 
-Google codejam 2014 repo
+* Qualification(All questions submitted)
